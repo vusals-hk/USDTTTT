@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USD DOLLARS — Clicker</title>
+
+  <!-- Monetag SDK -->
+  <script src="https://js.monetag.com/ads.js" defer></script>
+
+  <!-- TON Connect SDK -->
+  <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect.umd.js"></script>
+
+  <style>
+    :root{--bg:#fff7e6;--accent:#f59e0b;--muted:#6b7280}
+    body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#fffaf0,#ffffff);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+    .card{width:100%;max-width:920px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 6px 24px rgba(15,23,42,0.06)}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    h1{margin:0;font-size:22px}
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
+    .play{display:flex;flex-direction:column;align-items:center;padding:18px;border-radius:12px}
+    .big-btn{border:0;border-radius:999px;padding:34px 44px;font-size:44px;cursor:pointer;background:linear-gradient(180deg,#fff4d6,#fde68a);box-shadow:inset 0 -6px 18px rgba(0,0,0,0.04)}
+    .stats{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .energy{width:100%;max-width:420px}
+    .bar{height:10px;background:#f1f5f9;border-radius:999px;overflow:hidden}
+    .bar > i{display:block;height:100%;background:var(--accent);transition:width .3s}
+    .shop{padding:12px}
+    .upgrade{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid #eef2f7;margin-bottom:8px}
+    button.small{padding:8px 10px;border-radius:8px;border:0;cursor:pointer}
+    .btn-primary{background:#6366f1;color:#fff}
+    .muted{color:var(--muted);font-size:13px}
+    .ad-buttons{display:flex;gap:8px;margin-top:12px}
+    .footer{margin-top:14px;text-align:center;color:#65748b;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="card" role="application">
+    <div class="header">
+      <div>
+        <h1>USD DOLLARS — Clicker</h1>
+        <div class="muted">Click the 💵, earn coins, buy upgrades.</div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted">Level</div>
+        <div id="level" style="font-weight:700">1</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="play">
+        <div class="stats" style="width:100%">
+          <div class="muted">Coins</div>
+          <div id="coins" style="font-size:20px;font-weight:700">0</div>
+        </div>
+
+        <button id="tapBtn" class="big-btn" aria-label="Tap">💵</button>
+
+        <div style="width:100%;margin-top:14px;display:flex;flex-direction:column;align-items:center">
+          <div class="energy">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;margin-bottom:6px">
+              <span>Energy</span>
+              <span id="energyText">10/10</span>
+            </div>
+            <div class="bar"><i id="energyBar" style="width:100%"></i></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="refillBtn" class="small">Refill</button>
+              <button id="boostBtn" class="small btn-primary">Activate Boost</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wallet connect button -->
+        <button id="connectWalletBtn" class="small" style="margin-top:12px">Connect TON Wallet</button>
+        <p id="walletAddress" class="muted" style="margin-top:6px">Wallet not connected</p>
+
+        <div style="width:100%;margin-top:16px;background:#f8fafc;padding:10px;border-radius:8px;text-align:center">
+          <div class="muted">[Ad placeholder — Monetag or other SDK will show here]</div>
+        </div>
+
+        <div style="width:100%;display:flex;justify-content:space-between;margin-top:8px">
+          <button id="shareBtn" class="small">Share</button>
+          <button id="resetBtn" class="small">Reset</button>
+        </div>
+      </div>
+
+      <aside class="shop">
+        <h3 style="margin-top:0;margin-bottom:8px">Upgrades</h3>
+        <div id="upgradesContainer"></div>
+
+        <div style="margin-top:10px" class="muted">Auto income: <span id="autoIncome">0</span>/s</div>
+        <div class="muted" style="margin-top:6px">Tap power: <span id="tapPower">1</span></div>
+
+        <div style="margin-top:12px">
+          <h4 style="margin:6px 0">Ad Rewards</h4>
+          <div class="ad-buttons">
+            <button class="small" id="ad3">3 ads → 50</button>
+            <button class="small" id="ad5">5 ads → 100</button>
+            <button class="small" id="ad10">10 ads → 350</button>
+          </div>
+          <div id="adProgress" class="muted" style="margin-top:8px">Progress: —</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h4 style="margin:6px 0">Quick Tasks</h4>
+          <ul class="muted" style="padding-left:18px;margin:6px 0">
+            <li>Daily login — get coins</li>
+            <li>Watch ad — refill energy</li>
+            <li>Invite friend — earn 50%</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">Tip: Big tappable dollar, clear counters and upgrades — obvious clicker.</div>
+  </div>
+
+  <script>
+    const state = {
+      coins: Number(localStorage.getItem('hk_coins')) || 0,
+      tapPower: Number(localStorage.getItem('hk_tappower')) || 1,
+      autoIncome: Number(localStorage.getItem('hk_autoincome')) || 0,
+      energy: Number(localStorage.getItem('hk_energy')) || 10,
+      maxEnergy: 10,
+      level: Number(localStorage.getItem('hk_level')) || 1,
+      boostActive: false
+    };
+
+    const upgrades = [
+      { id:'tap-1', name:'Tap +1', cost:50, apply:()=> state.tapPower += 1 },
+      { id:'tap-5', name:'Tap +5', cost:300, apply:()=> state.tapPower += 5 },
+      { id:'auto-1', name:'Auto +1/s', cost:200, apply:()=> state.autoIncome += 1 },
+      { id:'auto-5', name:'Auto +5/s', cost:1200, apply:()=> state.autoIncome += 5 }
+    ];
+
+    const adProgress = { '50':0, '100':0, '350':0 };
+    const adRequirements = { '50':3, '100':5, '350':10 };
+
+    const coinsEl = document.getElementById('coins');
+    const tapPowerEl = document.getElementById('tapPower');
+    const autoIncomeEl = document.getElementById('autoIncome');
+    const energyText = document.getElementById('energyText');
+    const energyBar = document.getElementById('energyBar');
+    const levelEl = document.getElementById('level');
+    const upgradesContainer = document.getElementById('upgradesContainer');
+    const adProgressEl = document.getElementById('adProgress');
+
+    function saveState(){
+      localStorage.setItem('hk_coins', state.coins);
+      localStorage.setItem('hk_tappower', state.tapPower);
+      localStorage.setItem('hk_autoincome', state.autoIncome);
+      localStorage.setItem('hk_energy', Math.floor(state.energy));
+      localStorage.setItem('hk_level', state.level);
+    }
+
+    function render(){
+      coinsEl.textContent = Math.floor(state.coins).toLocaleString();
+      tapPowerEl.textContent = state.tapPower;
+      autoIncomeEl.textContent = state.autoIncome;
+      energyText.textContent = `${Math.floor(state.energy)}/${state.maxEnergy}`;
+      energyBar.style.width = `${Math.min(1, state.energy / state.maxEnergy) * 100}%`;
+      levelEl.textContent = state.level;
+      adProgressEl.textContent = `50:${adProgress['50']} / ${adRequirements['50']}  •  100:${adProgress['100']} / ${adRequirements['100']}  •  350:${adProgress['350']} / ${adRequirements['350']}`;
+    }
+
+    function handleTap(){
+      if(state.energy <=0){ alert('No energy'); return; }
+      const gain = state.tapPower * (state.boostActive?2:1);
+      state.coins += gain; state.energy = Math.max(0,state.energy-1); saveState(); render();
+    }
+
+    function buyUpgrade(u){
+      if(state.coins<u.cost){ alert('Not enough coins'); return; }
+      state.coins -= u.cost; u.apply(); state.level++; saveState(); render();
+    }
+
+    let boostTimeout = null;
+    function activateBoost(seconds=20){
+      if(state.boostActive) return; state.boostActive=true; render();
+      if(boostTimeout) clearTimeout(boostTimeout);
+      boostTimeout=setTimeout(()=>{state.boostActive=false; render();},seconds*1000);
+    }
+
+    setInterval(()=>{
+      if(state.autoIncome>0) state.coins += state.autoIncome;
+      state.energy = Math.min(state.maxEnergy,state.energy+0.2);
+      saveState(); render();
+    },1000);
+
+    function showAd(){
+      return new Promise(resolve=>{
+        if(window.MonetagAds && typeof MonetagAds.showInterstitial==='function'){
+          try{ MonetagAds.showInterstitial({onClosed:()=>resolve(true),onError:()=>resolve(true)}); }
+          catch(e){ resolve(true); }
+        }else{
+          const ok = confirm('Simulate ad? Click OK.');
+          setTimeout(()=>resolve(ok),1000);
+        }
+      });
+    }
+
+    async function watchAdForReward(rewardAmount){
+      const req=adRequirements[String(rewardAmount)];
+      const watched = await showAd(); if(!watched) return;
+      adProgress[String(rewardAmount)]++;
+      if(adProgress[String(rewardAmount)]>=req){
+        state.coins += rewardAmount; adProgress[String(rewardAmount)]=0;
+        alert(`${rewardAmount} coin qazandınız!`);
+      }else alert(`Reklama baxıldı (${adProgress[String(rewardAmount)]}/${req})`);
+      saveState(); render();
+    }
+
+    function resetDemo(){
+      if(!confirm('Reset everything?')) return;
+      state.coins=0; state.tapPower=1; state.autoIncome=0; state.energy=state.maxEnergy; state.level=1; state.boostActive=false;
+      adProgress['50']=0; adProgress['100']=0; adProgress['350']=0;
+      localStorage.removeItem('hk_coins'); localStorage.removeItem('hk_tappower'); localStorage.removeItem('hk_autoincome'); localStorage.removeItem('hk_energy'); localStorage.removeItem('hk_level');
+      render();
+    }
+
+    function refillEnergy(){ state.energy=state.maxEnergy; saveState(); render(); }
+
+    function setupUI(){
+      document.getElementById('tapBtn').addEventListener('click', handleTap);
+      document.getElementById('refillBtn').addEventListener('click', refillEnergy);
+      document.getElementById('boostBtn').addEventListener('click', ()=>activateBoost(20));
+      document.getElementById('resetBtn').addEventListener('click', resetDemo);
+      document.getElementById('shareBtn').addEventListener('click',()=>{ if(navigator.clipboard) navigator.clipboard.writeText(location.href).then(()=> alert('URL copied')); });
+      document.getElementById('ad3').addEventListener('click',()=>watchAdForReward(50));
+      document.getElementById('ad5').addEventListener('click',()=>watchAdForReward(100));
+      document.getElementById('ad10').addEventListener('click',()=>watchAdForReward(350));
+
+      upgradesContainer.innerHTML='';
+      upgrades.forEach(u=>{
+        const div=document.createElement('div'); div.className='upgrade';
+        div.innerHTML=`<div><div style="font-weight:600">${u.name}</div><div class="muted">Cost: ${u.cost}</div></div>`;
+        const btn=document.createElement('button'); btn.className='small btn-primary'; btn.textContent='Buy';
+        btn.addEventListener('click',()=>buyUpgrade(u)); div.appendChild(btn); upgradesContainer.appendChild(div);
+      });
+
+      // --- TON Wallet Connect ---
+      const tonConnect = new TON_CONNECT.TonConnect({manifestUrl:"https://YOUR_DOMAIN/tonconnect-manifest.json"});
+      const connectBtn = document.getElementById("connectWalletBtn");
+      const walletAddressDisplay = document.getElementById("walletAddress");
+      connectBtn.onclick = async ()=>{
+        try{
+          await tonConnect.connectWallet();
+          const wallet = tonConnect.wallet;
+          if(wallet){
+            walletAddressDisplay.textContent = "Wallet: " + wallet.account.address;
+            connectBtn.textContent = "Connected"; connectBtn.disabled=true;
+          }
+        }catch(err){ console.error(err); alert("Wallet bağlama alınmadı"); }
+      };
+    }
+
+    setupUI(); render();
+  </script>
+</body>
+</html>
